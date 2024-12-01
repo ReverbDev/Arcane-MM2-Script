@@ -1,0 +1,82 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LP = Players.LocalPlayer
+local roles
+
+-- Create Highlight for new players
+function CreateHighlight()
+    for _, v in pairs(Players:GetChildren()) do
+        if v ~= LP and v.Character and not v.Character:FindFirstChild("Highlight") then
+            local highlight = Instance.new("Highlight", v.Character)
+            highlight.OutlineTransparency = 0
+        end
+    end
+end
+
+-- Update Highlight colors and outline based on roles
+function UpdateHighlights()
+    for _, v in pairs(Players:GetChildren()) do
+        if v ~= LP and v.Character and v.Character:FindFirstChild("Highlight") then
+            local highlight = v.Character:FindFirstChild("Highlight")
+            
+            -- Check if the player is dead or in the lobby
+            if not IsAlive(v) or not v.Character:FindFirstChild("HumanoidRootPart") then
+                highlight.FillColor = Color3.fromRGB(128, 128, 128) -- Grey
+                highlight.OutlineColor = Color3.fromRGB(128, 128, 128) -- Grey outline
+            -- Sheriff: Hex 0000CC
+            elseif v.Name == Sheriff and IsAlive(v) then
+                highlight.FillColor = Color3.fromRGB(0, 0, 204) -- Blue
+                highlight.OutlineColor = Color3.fromRGB(0, 0, 204) -- Blue outline
+            -- Murderer: Hex 990000
+            elseif v.Name == Murder and IsAlive(v) then
+                highlight.FillColor = Color3.fromRGB(153, 0, 0) -- Red
+                highlight.OutlineColor = Color3.fromRGB(153, 0, 0) -- Red outline
+            -- Hero (picked up the gun): Hex FFFA00
+            elseif v ~= Sheriff and IsAlive(v) and HasGun(v) then
+                highlight.FillColor = Color3.fromRGB(255, 250, 0) -- Yellow
+                highlight.OutlineColor = Color3.fromRGB(255, 250, 0) -- Yellow outline
+            -- Innocent players
+            else
+                highlight.FillColor = Color3.fromRGB(0, 204, 0) -- Green
+                highlight.OutlineColor = Color3.fromRGB(0, 204, 0) -- Green outline
+            end
+        end
+    end
+end
+
+-- Check if a player is alive
+function IsAlive(Player)
+    for i, v in pairs(roles) do
+        if Player.Name == i then
+            return not v.Killed and not v.Dead
+        end
+    end
+    return false
+end
+
+-- Check if a player has the gun (Hero role)
+function HasGun(Player)
+    for i, v in pairs(roles) do
+        if Player.Name == i then
+            return v.Role == "Hero"
+        end
+    end
+    return false
+end
+
+-- Run the ESP update loop
+RunService.RenderStepped:Connect(function()
+    roles = ReplicatedStorage:FindFirstChild("GetPlayerData", true):InvokeServer()
+    for i, v in pairs(roles) do
+        if v.Role == "Murderer" then
+            Murder = i
+        elseif v.Role == 'Sheriff' then
+            Sheriff = i
+        elseif v.Role == 'Hero' then
+            Hero = i
+        end
+    end
+    CreateHighlight()
+    UpdateHighlights()
+end)
