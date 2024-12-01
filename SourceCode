@@ -1,0 +1,112 @@
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
+
+local isMobile = game:GetService("UserInputService").TouchEnabled
+
+local Window = Fluent:CreateWindow({
+    Title = "MM2 Arcane by ReverbDev",
+    SubTitle = "https://discord.gg/TFYDXqfV",
+    TabWidth = 160,
+    Size = isMobile and UDim2.fromOffset(470, 370) or UDim2.fromOffset(650, 520), -- Slightly larger size
+    Acrylic = true,
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl
+})
+
+-- Add tabs
+local Tabs = {
+    Main = Window:AddTab({ Title = "Main", Icon = "" }),
+    Autofarm = Window:AddTab({ Title = "Autofarm", Icon = "activity" }),
+    Player = Window:AddTab({ Title = "Player", Icon = "user" }),
+    More = Window:AddTab({ Title = "More", Icon = "more-horizontal" })
+}
+
+-- Main Tab
+Tabs.Main:AddParagraph({
+    Title = "Welcome",
+    Content = "This is the Main tab for general settings and features."
+})
+
+Tabs.Main:AddButton({
+    Title = "Example Button",
+    Description = "Click me!",
+    Callback = function()
+        print("Main tab button clicked!")
+    end
+})
+
+-- Autofarm Tab
+Tabs.Autofarm:AddParagraph({
+    Title = "Autofarm Features",
+    Content = "Add your MM2 autofarming features here."
+})
+
+Tabs.Autofarm:AddToggle("EnableAutofarm", {
+    Title = "Enable Autofarm",
+    Default = false,
+    Callback = function(state)
+        print("Autofarm toggled:", state)
+        if state then
+            -- Add autofarm functionality here
+        else
+            -- Stop autofarm functionality
+        end
+    end
+})
+
+-- Player Tab
+Tabs.Player:AddParagraph({
+    Title = "Player Scripts",
+    Content = "Add player-specific scripts here, like ESP or WalkSpeed."
+})
+
+Tabs.Player:AddSlider("WalkSpeed", {
+    Title = "Adjust WalkSpeed",
+    Min = 16,
+    Max = 100,
+    Default = 16,
+    Rounding = 0,
+    Callback = function(value)
+        print("WalkSpeed set to:", value)
+        -- Example: game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = value
+    end
+})
+
+-- More Tab
+Tabs.More:AddParagraph({
+    Title = "More Features",
+    Content = "Add miscellaneous features here."
+})
+
+Tabs.More:AddButton({
+    Title = "Reset Settings",
+    Description = "Reset all settings to default.",
+    Callback = function()
+        SaveManager:ResetConfig()
+        print("Settings reset to default.")
+    end
+})
+
+-- Addons Configuration
+SaveManager:SetLibrary(Fluent)
+InterfaceManager:SetLibrary(Fluent)
+
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({})
+InterfaceManager:SetFolder("MM2Arcane")
+SaveManager:SetFolder("MM2Arcane/Configs")
+
+InterfaceManager:BuildInterfaceSection(Tabs.More)
+SaveManager:BuildConfigSection(Tabs.More)
+
+Window:SelectTab(1)
+
+-- Notification
+Fluent:Notify({
+    Title = "MM2 Arcane",
+    Content = "GUI Successfully Loaded ",
+    Duration = 8
+})
+
+SaveManager:LoadAutoloadConfig()
