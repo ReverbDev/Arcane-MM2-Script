@@ -1,0 +1,88 @@
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
+
+-- Detect mobile or PC for size adjustments
+local isMobile = game:GetService("UserInputService").TouchEnabled
+
+local Window = Fluent:CreateWindow({
+    Title = "MM2 Arcane by ReverbDev", -- Updated title
+    SubTitle = "Customized GUI",
+    TabWidth = 160,
+    Size = isMobile and UDim2.fromOffset(400, 300) or UDim2.fromOffset(580, 460), -- Smaller size for mobile
+    Acrylic = true,
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl
+})
+
+-- Fluent provides Lucide Icons for tabs, icons are optional
+local Tabs = {
+    Main = Window:AddTab({ Title = "Main", Icon = "" }),
+    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
+}
+
+local Options = Fluent.Options
+
+-- Example Notification
+Fluent:Notify({
+    Title = "MM2 Arcane",
+    Content = "Welcome to the Arcane MM2 Script!",
+    SubContent = "Enjoy your stay.",
+    Duration = 5
+})
+
+-- Example Features
+do
+    Tabs.Main:AddParagraph({
+        Title = "Welcome",
+        Content = "This is your customized MM2 Arcane GUI.\nEnjoy the enhanced experience!"
+    })
+
+    Tabs.Main:AddButton({
+        Title = "Show Dialog",
+        Description = "Opens a dialog box.",
+        Callback = function()
+            Window:Dialog({
+                Title = "Dialog Example",
+                Content = "This is a sample dialog box.",
+                Buttons = {
+                    {
+                        Title = "Okay",
+                        Callback = function()
+                            print("Dialog confirmed.")
+                        end
+                    },
+                    {
+                        Title = "Cancel",
+                        Callback = function()
+                            print("Dialog canceled.")
+                        end
+                    }
+                }
+            })
+        end
+    })
+end
+
+-- Addons Configuration
+SaveManager:SetLibrary(Fluent)
+InterfaceManager:SetLibrary(Fluent)
+
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({})
+InterfaceManager:SetFolder("MM2Arcane")
+SaveManager:SetFolder("MM2Arcane/Configs")
+
+InterfaceManager:BuildInterfaceSection(Tabs.Settings)
+SaveManager:BuildConfigSection(Tabs.Settings)
+
+Window:SelectTab(1)
+
+-- Notification for Successful Loading
+Fluent:Notify({
+    Title = "MM2 Arcane",
+    Content = "The script has been successfully loaded!",
+    Duration = 8
+})
+
+SaveManager:LoadAutoloadConfig()
