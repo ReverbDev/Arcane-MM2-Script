@@ -1,0 +1,165 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local LP = Players.LocalPlayer
+local ESPEnabled = true -- Toggle this to enable/disable the ESP
+local roles = {}
+
+local Colors = {
+    Innocent = Color3.fromRGB(0, 204, 0),  -- Green
+    Murder = Color3.fromRGB(153, 0, 0),   -- Dark Red
+    Sheriff = Color3.fromRGB(0, 0, 204), -- Blue
+    Hero = Color3.fromRGB(255, 250, 0),  -- Yellow
+    Dead = Color3.fromRGB(128, 128, 128) -- Grey
+}
+
+-- Function to toggle in-game username visibility
+function ToggleInGameUsernames(state)
+    for _, player in pairs(Players:GetPlayers()) do
+        if player.Character then
+            local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid.DisplayDistanceType = state and Enum.HumanoidDisplayDistanceType.Viewer or Enum.HumanoidDisplayDistanceType.None
+            end
+        end
+    end
+end
+
+-- Create a Billboard GUI for NameTags
+function CreateNameTag(player)
+    if player ~= LP and player.Character and not player.Character:FindFirstChild("NameTag") then
+        local head = player.Character:FindFirstChild("Head")
+        if head then
+            -- BillboardGui
+            local billboard = Instance.new("BillboardGui", player.Character)
+            billboard.Name = "NameTag"
+            billboard.Adornee = head
+            billboard.Size = UDim2.new(0, 70, 0, 15) -- Smaller size
+            billboard.StudsOffset = Vector3.new(0, 2.5, 0) -- Above the head
+            billboard.AlwaysOnTop = true
+
+            -- TextLabel
+            local label = Instance.new("TextLabel", billboard)
+            label.Size = UDim2.new(1, 0, 1, 0)
+            label.BackgroundTransparency = 1
+            label.Text = player.Name
+            label.TextColor3 = Colors.Innocent -- Default color
+            label.TextScaled = true
+            label.Font = Enum.Font.GothamBold
+            label.TextStrokeTransparency = 0.5 -- Slight stroke for better readability
+        end
+    end
+end
+
+-- Update NameTags dynamically
+function UpdateNameTags()
+    for _, player in pairs(Players:GetPlayers()) do
+        if ESPEnabled then
+            if player.Character then
+                -- Ensure NameTag exists
+                CreateNameTag(player)
+                local nameTag = player.Character:FindFirstChild("NameTag")
+                local label = nameTag and nameTag:FindFirstChildOfClass("TextLabel")
+
+                if label then
+                    -- Update NameTag color based on role
+                    local roleData = roles[player.Name]
+                    if roleData then
+                        if roleData.Role == "Murderer" and IsAlive(player) then
+                            label.TextColor3 = Colors.Murder
+                        elseif roleData.Role == "Sheriff" and IsAlive(player) then
+                            label.TextColor3 = Colors.Sheriff
+                        elseif roleData.Role == "Hero" and IsAlive(player) then
+                            label.TextColor3 = Colors.Hero
+                        elseif not IsAlive(player) then
+                            label.TextColor3 = Colors.Dead
+                        else
+                            label.TextColor3 = Colors.Innocent
+                        end
+                    else
+                        -- Mark all players as "Dead" if no game is in progress
+                        label.TextColor3 = Colors.Dead
+                    end
+                end
+
+                -- Disable in-game username
+                local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+                if humanoid then
+                    humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+                end
+            end
+        else
+            -- Remove NameTags when ESP is disabled
+            if player.Character and player.Character:FindFirstChild("NameTag") then
+                player.Character:FindFirstChild("NameTag"):Destroy()
+            end
+            -- Re-enable in-game usernames
+            local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.Viewer
+            end
+        end
+    end
+end
+
+-- Check if player is alive
+function IsAlive(player)
+    local roleData = roles[player.Name]
+    return roleData and not roleData.Killed and not roleData.Dead
+end
+
+-- Cleanup NameTags when players leave
+function CleanupNameTags(player)
+    if player.Character and player.Character:FindFirstChild("NameTag") then
+        player.Character:FindFirstChild("NameTag"):Destroy()
+    end
+end
+
+-- Add functionality for new players or respawning players
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function()
+        if ESPEnabled then
+            wait(0.5) -- Ensure the character is loaded
+            CreateNameTag(player)
+            -- Disable in-game username
+            local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+            end
+        end
+    end)
+end)
+
+-- Ensure functionality for already-present players
+for _, player in pairs(Players:GetPlayers()) do
+    player.CharacterAdded:Connect(function()
+        if ESPEnabled then
+            wait(0.5) -- Ensure the character is loaded
+            CreateNameTag(player)
+            -- Disable in-game username
+            local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+            end
+        end
+    end)
+end
+
+-- Update role data
+RunService.RenderStepped:Connect(function()
+    if ESPEnabled then
+        roles = ReplicatedStorage:FindFirstChild("GetPlayerData", true):InvokeServer()
+        UpdateNameTags()
+    end
+end)
+
+-- Toggle ESP (Enable/Disable)
+function ToggleESP(state)
+    ESPEnabled = state
+    ToggleInGameUsernames(not state) -- Disable in-game usernames when ESP is on
+    UpdateNameTags() -- Update NameTags
+end
+
+-- Example usage:
+ToggleESP(true) -- Enable ESP
+-- ToggleESP(false) -- Disable ESP
